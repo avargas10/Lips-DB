@@ -15,6 +15,7 @@
 (format t "Startup database.~C~C" #\return #\linefeed)
 (format t "Shutdown database.~C~C" #\return #\linefeed)
 (format t "Union.~C~C" #\return #\linefeed)
+(format t "Load database from file.~C~C" #\return #\linefeed)
 (princ "Introduce Instruction: ")
 (protocol (read-line) dataBase isUp created)
 
@@ -37,6 +38,7 @@
   							 		 ((string-equal instr "Import data Table")(importDataTable database))
   							 		 ((string-equal instr "Drop database") (drop_Database))
   							 		 ((string-equal instr "Drop Table") (dropTable database))
+  							 		 ((string-equal instr "Load") (loadExisting database isUp created))
   							 		 ((string-equal instr "Select") (select database))
   							 		 )
   							 	(myElse database isUp "~C~CInstruction not recognized" created)
@@ -67,19 +69,27 @@
 	(MainDB_Menu () 1 0))
 
 (defun Startup_database(database isUp created)
-
 	(cond((equal isUp 0)
-		(format t "Write the file name: " #\return #\linefeed)
-		(create_Txt (read-line))
 		(format t "~C~C--Initializing DataBase" #\return #\linefeed)(MainDB_Menu database 1 created))))
+(defun loadExisting(database isUp created)
+	(format t "Load from file: " #\return #\linefeed)
+	(loadDB (read-line) database isUp created)
+	)
 
-
-(defun create_Txt(name) 
+(defun saveDB(name database) 
 	(with-open-file (stream name :direction :output)
+	(format stream (listToString (cons database () )))
+    (terpri stream)
     (close stream)
+))
+(defun loadDB(name database isUp created) 
+	(with-open-file (stream name)
+     (MainDB_Menu  (read stream nil) isUp created)
 ))
 
 (defun shutdown_Database(database created)
+	(format t "Save in file: " #\return #\linefeed)
+	(saveDB (read-line) database)    
 	(MainDB_Menu database 0 created)
 	)
 
@@ -235,7 +245,8 @@
 		((string-equal name (car list))(indexInListSpec name ()))
 		(T (+ 1 (indexInListSpec name (CDR list))))))
 
-
+(defun listToString (lst)
+    (format nil "~{~A~}" lst))
 
 (defun selectSpecData(database table  pos)
 	(compareInfo pos (cdr(getElement (dataPos database table 
